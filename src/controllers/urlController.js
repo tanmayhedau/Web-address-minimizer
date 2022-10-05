@@ -56,7 +56,7 @@ const createShortURL = async function (req, res) {
       longUrl.startsWith("http://") ||
       longUrl.startsWith("https://") ||
       longUrl.startsWith("ftp://");
-    // let regForUrl = /(:?^((https|http|HTTP|HTTPS){1}:\/\/)(([w]{3})[\.]{1})?([a-zA-Z0-9]{1,}[\.])[\w]((\/){1}([\w@? ^=%&amp;~+#-_.]+)))$/
+    
     if (!link) {
       return res
         .status(400)
@@ -81,7 +81,7 @@ const createShortURL = async function (req, res) {
 
     let findURL = await urlModel
       .findOne({ longUrl: longUrl })
-      .select({ _id: 0, __v: 0 });
+      .select({ _id: 0, __v: 0 ,createdAt:0 , updatedAt:0});
 
       if(findURL){
         let createURL = {
@@ -102,6 +102,7 @@ const createShortURL = async function (req, res) {
         method: "get",
         url: longUrl,
       };
+
       await axios(obj)
         .then((res) => {
           if (res.status == 201 || res.status == 200) urlFound = true;
@@ -128,13 +129,6 @@ const createShortURL = async function (req, res) {
         data: createURL,
       });
     
-
-    // //409 : conflict with db
-    // return res.status(409).send({
-    //   status: true,
-    //   message: "long URL already exists",
-    //   data: findURL,
-    // });
   } catch (error) {
     return res.status(500).send({ status: false, message: error.message });
   }
@@ -151,7 +145,7 @@ const redirectURL = async function (req, res) {
 
     let cachedURLCode = await GET_ASYNC(`${urlCode}`);
     if (cachedURLCode) {
-      // console.log("im in")
+      console.log("im in")
       return res.redirect(JSON.parse(cachedURLCode).longUrl);
     }
 
@@ -169,5 +163,6 @@ const redirectURL = async function (req, res) {
     return res.status(500).send({ status: false, message: error.message });
   }
 };
+
 
 module.exports = {createShortURL, redirectURL};

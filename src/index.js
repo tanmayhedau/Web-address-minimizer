@@ -20,7 +20,7 @@ app.use("/", route);
 //   res.status(400).send({ status: false, error: "Enter proper Url" });
 // });
 
-app.use("*" ,(req,res) => {
+app.use("/*" ,(req,res) => {
   res.status(400).send({ status: false, error: "Enter proper Url" });
 });
 
