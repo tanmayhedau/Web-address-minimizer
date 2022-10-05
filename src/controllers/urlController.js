@@ -52,20 +52,17 @@ const shortURL = async function (req, res) {
     // if (!validURL.isUri(longUrl)) return res.status(400).send({ status: false, message: "long URL is invalid" });
 
     if (!isValid(urlCode) || !isValid(shortUrl)) {
-
       req.body.urlCode = shortId.generate().toLowerCase();
       req.body.shortUrl = baseUrl + "/" + req.body.urlCode;
     }
 
     let cachedURLCode = await GET_ASYNC(`${longUrl}`);
     if (cachedURLCode) {
-      return res
-        .status(201)
-        .send({
-          status: true,
-          message: "Already URL shorten 1 ",
-          data: JSON.parse(cachedURLCode),
-        });
+      return res.status(201).send({
+        status: true,
+        message: "Already URL shorten 1 ",
+        data: JSON.parse(cachedURLCode),
+      });
     }
 
     let findURL = await urlModel
@@ -75,7 +72,20 @@ const shortURL = async function (req, res) {
     if (!findURL) {
       let url = await urlModel.create(req.body);
 
+      let urlFound = false;
+      let obj = {
+        method: "get",
+        url: longUrl,
+      };
+      await axios(obj)
+        .then((res) => {
+          if (res.status == 201 || res.status == 200) urlFound = true;
+        })
+        .catch((err) => {});
 
+      if (urlFound == false) {
+        return res.status(400).send({ status: false, message: "Invalid URL" });
+      }
 
       let createURL = {
         longUrl: url.longUrl,
@@ -84,23 +94,19 @@ const shortURL = async function (req, res) {
       };
 
       await SET_ASYNC(`${longUrl}`, JSON.stringify(createURL));
-      return res
-        .status(201)
-        .send({
-          status: true,
-          message: "successfully shortend",
-          data: createURL,
-        });
+      return res.status(201).send({
+        status: true,
+        message: "successfully shortend",
+        data: createURL,
+      });
     }
 
     //409 : conflict with db
-    return res
-      .status(409)
-      .send({
-        status: true,
-        message: "long URL already exists",
-        data: findURL,
-      });
+    return res.status(409).send({
+      status: true,
+      message: "long URL already exists",
+      data: findURL,
+    });
   } catch (error) {
     return res.status(500).send({ status: false, message: error.message });
   }
