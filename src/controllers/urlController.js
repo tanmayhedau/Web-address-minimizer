@@ -1,6 +1,7 @@
 const urlModel = require("../models/urlModel");
 const shortId = require("shortid");
 const validURL = require("valid-url");
+const axios = require("axios");
 const redis = require("redis");
 const { promisify } = require("util");
 
@@ -10,6 +11,7 @@ const isValid = (value) => {
   return true;
 };
 
+//Connect to redis
 const redisClient = redis.createClient(
   16325,
   "redis-16325.c301.ap-south-1-1.ec2.cloud.redislabs.com",
@@ -24,12 +26,18 @@ redisClient.on("connect", async function () {
   console.log("Connected to Redis..");
 });
 
+//1. connect to the server
+//2. use the commands :
+
+//Connection setup for redis
+
 const SET_ASYNC = promisify(redisClient.SET).bind(redisClient);
 const GET_ASYNC = promisify(redisClient.GET).bind(redisClient);
 
-const shortURL = async function (req, res) {
+const createShortURL = async function (req, res) {
   try {
     let { longUrl, urlCode, shortUrl } = req.body;
+    longUrl = longUrl.trim()
 
     let baseUrl = "http://localhost:3000";
 
@@ -71,6 +79,7 @@ const shortURL = async function (req, res) {
 
     if (!findURL) {
       let url = await urlModel.create(req.body);
+
 
       let urlFound = false;
       let obj = {
@@ -142,4 +151,4 @@ const redirectURL = async function (req, res) {
   }
 };
 
-module.exports = { shortURL, redirectURL };
+module.exports = {createShortURL, redirectURL};

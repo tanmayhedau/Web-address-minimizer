@@ -5,7 +5,7 @@ const app = express();
 // app.use(express.json());
 
 
-router.post("/url/shorten", urlController.shortURL);
+router.post("/url/shorten", urlController.createShortURL);
 
 router.get('/:urlCode',urlController.redirectURL)
 
