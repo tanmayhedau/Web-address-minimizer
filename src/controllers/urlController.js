@@ -1,6 +1,6 @@
 const urlModel = require("../models/urlModel");
 const shortId = require("shortid");
-const validURL = require("valid-url");
+// const validURL = require("valid-url");
 const axios = require("axios");
 const redis = require("redis");
 const { promisify } = require("util");
@@ -36,6 +36,12 @@ const GET_ASYNC = promisify(redisClient.GET).bind(redisClient);
 
 const createShortURL = async function (req, res) {
   try {
+    if (!Object.keys(req.body).length > 0) {
+        return res
+          .status(400)
+          .send({ status: true, message: "Request body can't be empty" });
+      }
+
     let { longUrl, urlCode, shortUrl } = req.body;
     longUrl = longUrl.trim()
 
@@ -66,9 +72,9 @@ const createShortURL = async function (req, res) {
 
     let cachedURLCode = await GET_ASYNC(`${longUrl}`);
     if (cachedURLCode) {
-      return res.status(201).send({
+      return res.status(200).send({
         status: true,
-        message: "Already URL shorten 1 ",
+        message: "Already URL shorten from redis ",
         data: JSON.parse(cachedURLCode),
       });
     }
@@ -77,9 +83,19 @@ const createShortURL = async function (req, res) {
       .findOne({ longUrl: longUrl })
       .select({ _id: 0, __v: 0 });
 
-    if (!findURL) {
-      let url = await urlModel.create(req.body);
+      if(findURL){
+        let createURL = {
+            longUrl: findURL.longUrl,
+            shortUrl: findURL.shortUrl,
+            urlCode: findURL.urlCode,
+          };
+    
+          await SET_ASYNC(`${longUrl}`, JSON.stringify(createURL),"EX",30);
 
+        return res.status(200).send({status: true,
+            message: " I am coming from db already shortend ",
+            data: findURL})
+      }
 
       let urlFound = false;
       let obj = {
@@ -93,8 +109,11 @@ const createShortURL = async function (req, res) {
         .catch((err) => {});
 
       if (urlFound == false) {
-        return res.status(400).send({ status: false, message: "Invalid URL" });
+        return res.status(400).send({ status: false, message: "Invalid URL axios" });
       }
+
+    
+      let url = await urlModel.create(req.body);
 
       let createURL = {
         longUrl: url.longUrl,
@@ -102,20 +121,20 @@ const createShortURL = async function (req, res) {
         urlCode: url.urlCode,
       };
 
-      await SET_ASYNC(`${longUrl}`, JSON.stringify(createURL));
+      await SET_ASYNC(`${longUrl}`, JSON.stringify(createURL),"EX",30);
       return res.status(201).send({
         status: true,
         message: "successfully shortend",
         data: createURL,
       });
-    }
+    
 
-    //409 : conflict with db
-    return res.status(409).send({
-      status: true,
-      message: "long URL already exists",
-      data: findURL,
-    });
+    // //409 : conflict with db
+    // return res.status(409).send({
+    //   status: true,
+    //   message: "long URL already exists",
+    //   data: findURL,
+    // });
   } catch (error) {
     return res.status(500).send({ status: false, message: error.message });
   }
@@ -138,7 +157,7 @@ const redirectURL = async function (req, res) {
 
     let findUrlCode = await urlModel.findOne({ urlCode: urlCode });
 
-    await SET_ASYNC(`${urlCode}`, JSON.stringify(findUrlCode));
+    await SET_ASYNC(`${urlCode}`, JSON.stringify(findUrlCode), "EX", 30);
 
     if (!findUrlCode)
       return res
