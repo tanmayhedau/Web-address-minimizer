@@ -1,13 +1,13 @@
 const urlModel = require("../models/urlModel");
 const shortId = require("shortid");
-// const validURL = require("valid-url");
 const axios = require("axios");
 const redis = require("redis");
 const { promisify } = require("util");
+// const validURL = require("valid-url");
 
 const isValid = (value) => {
   if (typeof value === "undefined" || value === null) return false;
-  if (typeof value === "string" && value.trim().length === 0) return false; //.trim() :remove spaces, should not mistake empty space as value
+  if (typeof value === "string" && value.trim().length === 0) return false; 
   return true;
 };
 
@@ -39,7 +39,7 @@ const createShortURL = async function (req, res) {
     if (!Object.keys(req.body).length > 0) {
       return res
         .status(400)
-        .send({ status: true, message: "Request body can't be empty" });
+        .send({ status: false, message: "Request body can't be empty" });
     }
 
     let { longUrl } = req.body;
@@ -132,6 +132,8 @@ const createShortURL = async function (req, res) {
     return res.status(500).send({ status: false, message: error.message });
   }
 };
+
+
 
 const redirectURL = async function (req, res) {
   try {
