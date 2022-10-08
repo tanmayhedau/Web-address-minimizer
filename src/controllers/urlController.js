@@ -3,7 +3,6 @@ const shortId = require("shortid");
 const axios = require("axios");
 const redis = require("redis");
 const { promisify } = require("util");
-// const validURL = require("valid-url");
 
 const isValid = (value) => {
   if (typeof value === "undefined" || value === null) return false;
@@ -31,11 +30,13 @@ redisClient.on("connect", async function () {
 
 //Connection setup for redis
 
-const SET_ASYNC = promisify(redisClient.SET).bind(redisClient);
-const GET_ASYNC = promisify(redisClient.GET).bind(redisClient);
+const SET_ASYNC = promisify(redisClient.SET).bind(redisClient); //redis server will only listen to connections made to the address specified in the bind option.
+
+const GET_ASYNC = promisify(redisClient.GET).bind(redisClient); 
 
 const createShortURL = async function (req, res) {
   try {
+    
     if (!Object.keys(req.body).length > 0) {
       return res
         .status(400)
@@ -51,17 +52,6 @@ const createShortURL = async function (req, res) {
       return res
         .status(400)
         .send({ status: false, message: "long URL is mandatory" });
-
-    // function isValidUrl(string) {
-    //   const pattern =
-    //     /^https?:\/\/(?:www\.)?[-a-zA-Z0-9@:%._\+~#=]{1,256}\.[a-zA-Z0-9()]{1,6}\b([-a-zA-Z0-9()@:%_\+.~#?&//=]*)$/gm;
-    //   return pattern.test(string);
-    // }
-
-    // if (!isValidUrl(longUrl))
-    //   return res
-    //     .status(400)
-    //     .send({ status: false, message: "long URL is invalid" });
 
     req.body.urlCode = shortId.generate().toLowerCase();
     req.body.shortUrl = baseUrl + "/" + req.body.urlCode;
@@ -80,13 +70,7 @@ const createShortURL = async function (req, res) {
       .select({ _id: 0, __v: 0, createdAt: 0, updatedAt: 0 });
 
     if (findURL) {
-      let createURL = {
-        longUrl: findURL.longUrl,
-        shortUrl: findURL.shortUrl,
-        urlCode: findURL.urlCode,
-      };
-
-      await SET_ASYNC(`${longUrl}`, JSON.stringify(createURL), "EX", 10);
+      await SET_ASYNC(`${longUrl}`, JSON.stringify(findURL), "EX", 10);
 
       return res
         .status(200)
@@ -97,17 +81,19 @@ const createShortURL = async function (req, res) {
         });
     }
 
-//alternate method for working longUrl
+    //axios call
     let urlFound;
     let obj = {
       method: "get",
       url: longUrl,
     };
+
     await axios(obj)
       .then(() => (urlFound = true))
       .catch(() => {
         urlFound = false;
       });
+
     if (!urlFound) {
       return res
         .status(400)
@@ -128,6 +114,7 @@ const createShortURL = async function (req, res) {
       message: "successfully shortend",
       data: createURL,
     });
+
   } catch (error) {
     return res.status(500).send({ status: false, message: error.message });
   }
@@ -141,7 +128,7 @@ const redirectURL = async function (req, res) {
 
     let cachedURLCode = await GET_ASYNC(`${urlCode}`);
     if (cachedURLCode) {
-      console.log("im in");
+    //   console.log("I'm in");
       return res.status(302).redirect(JSON.parse(cachedURLCode).longUrl);
     }
 
@@ -155,6 +142,7 @@ const redirectURL = async function (req, res) {
         .send({ status: false, message: "urlCode does not exist" });
 
     return res.status(302).redirect(findUrlCode.longUrl);
+
   } catch (error) {
     return res.status(500).send({ status: false, message: error.message });
   }

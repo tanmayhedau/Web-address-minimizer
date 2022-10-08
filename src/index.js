@@ -16,10 +16,6 @@ mongoose
 
 app.use("/", route);
 
-// app.use((req, res, next) => {
-//   res.status(400).send({ status: false, error: "Enter proper Url" });
-// });
-
 app.use("/*" ,(req,res) => {
   res.status(400).send({ status: false, error: "Enter proper Url" });
 });
