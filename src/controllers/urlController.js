@@ -6,18 +6,18 @@ const { promisify } = require("util");
 
 const isValid = (value) => {
   if (typeof value === "undefined" || value === null) return false;
-  if (typeof value === "string" && value.trim().length === 0) return false; 
+  if (typeof value === "string" && value.trim().length === 0) return false;
   return true;
 };
 
 //Connect to redis
 const redisClient = redis.createClient(
-  16325,
-  "redis-16325.c301.ap-south-1-1.ec2.cloud.redislabs.com",
+  13955,
+  "redis-13955.c264.ap-south-1-1.ec2.cloud.redislabs.com",
   { no_ready_check: true }
 );
 
-redisClient.auth("CxOuxBi8zhJs7AKP8t69tC18BzITAHr6", function (err) {
+redisClient.auth("qlVDcHQFgO2wOwOpw44q04Wu8emFr6ZU", function (err) {
   if (err) throw err;
 });
 
@@ -32,11 +32,10 @@ redisClient.on("connect", async function () {
 
 const SET_ASYNC = promisify(redisClient.SET).bind(redisClient); //redis server will only listen to connections made to the address specified in the bind option.
 
-const GET_ASYNC = promisify(redisClient.GET).bind(redisClient); 
+const GET_ASYNC = promisify(redisClient.GET).bind(redisClient);
 
 const createShortURL = async function (req, res) {
   try {
-    
     if (!Object.keys(req.body).length > 0) {
       return res
         .status(400)
@@ -72,13 +71,11 @@ const createShortURL = async function (req, res) {
     if (findURL) {
       await SET_ASYNC(`${longUrl}`, JSON.stringify(findURL), "EX", 10);
 
-      return res
-        .status(200)
-        .send({
-          status: true,
-          message: " I am coming from db already shortend ",
-          data: findURL,
-        });
+      return res.status(200).send({
+        status: true,
+        message: " I am coming from db already shortend ",
+        data: findURL,
+      });
     }
 
     //axios call
@@ -114,13 +111,10 @@ const createShortURL = async function (req, res) {
       message: "successfully shortend",
       data: createURL,
     });
-
   } catch (error) {
     return res.status(500).send({ status: false, message: error.message });
   }
 };
-
-
 
 const redirectURL = async function (req, res) {
   try {
@@ -128,7 +122,7 @@ const redirectURL = async function (req, res) {
 
     let cachedURLCode = await GET_ASYNC(`${urlCode}`);
     if (cachedURLCode) {
-    //   console.log("I'm in");
+      //   console.log("I'm in");
       return res.status(302).redirect(JSON.parse(cachedURLCode).longUrl);
     }
 
@@ -142,7 +136,6 @@ const redirectURL = async function (req, res) {
         .send({ status: false, message: "urlCode does not exist" });
 
     return res.status(302).redirect(findUrlCode.longUrl);
-
   } catch (error) {
     return res.status(500).send({ status: false, message: error.message });
   }
