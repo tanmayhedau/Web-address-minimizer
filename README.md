@@ -1,6 +1,6 @@
 # Plutonium
 
-## Scalable URL Shortner Project Requirement
+## Scalable Web address minimizer Project Requirement
 
 ## Phase I
 
